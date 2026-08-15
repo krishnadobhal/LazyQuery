@@ -1,0 +1,93 @@
+{
+  "name": "lazyquery",
+  "version": "1.0.0",
+  "description": "Distributed SQL query engine with a terminal database client — query CSV, SQLite, PostgreSQL, and MySQL from one TUI",
+  "type": "module",
+  "bin": {
+    "lazyquery": "bin/lazyquery.js",
+    "lazyq": "bin/lazyquery.js"
+  },
+  "files": [
+    "bin/",
+    "dist/",
+    "index.ts",
+    "core/",
+    "coordinator/",
+    "worker/",
+    "shared/",
+    "tui/",
+    "api/",
+    "config/",
+    "sample-datasets/",
+    "scripts/",
+    "tsconfig.json",
+    "tsconfig.build.json"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "tsx watch api/index.ts",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/index.js",
+    "lazy": "tsx index.ts",
+    "prepublishOnly": "npm run build && npm run typecheck",
+    "datasets:generate": "tsx scripts/generate-datasets.ts",
+    "db:demo": "tsx scripts/create-demo-db.ts",
+    "dev:coordinator": "tsx coordinator/index.ts",
+    "dev:worker": "tsx worker/index.ts",
+    "dev:tui": "tsx tui/index.tsx",
+    "cluster": "concurrently -k -n coord,worker-1,worker-2 -c blue,green,magenta \"tsx coordinator/index.ts\" \"tsx worker/index.ts --worker-id worker-1\" \"tsx worker/index.ts --worker-id worker-2\""
+  },
+  "keywords": [
+    "sql",
+    "database",
+    "tui",
+    "terminal",
+    "distributed",
+    "query-engine",
+    "postgres",
+    "mysql",
+    "sqlite",
+    "csv"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "axios": "^1.13.6",
+    "better-sqlite3": "^13.0.3",
+    "cors": "^2.8.6",
+    "csv-parse": "^7.0.2",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "helmet": "^8.1.0",
+    "ink": "^7.1.1",
+    "ink-text-input": "^6.0.0",
+    "ioredis": "^5.10.0",
+    "mysql2": "^3.23.3",
+    "node-sql-parser": "^5.4.0",
+    "pg": "^8.20.0",
+    "pg-hstore": "^2.3.4",
+    "prom-client": "^15.1.3",
+    "react": "^19.2.8",
+    "request-ip": "^3.3.0",
+    "sequelize": "^6.37.8",
+    "tsx": "^4.20.6",
+    "uuid": "^13.0.0",
+    "winston": "^3.19.0",
+    "winston-daily-rotate-file": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^24.0.15",
+    "@types/pg": "^8.21.0",
+    "@types/react": "^19.2.18",
+    "@types/request-ip": "^0.0.41",
+    "concurrently": "^10.0.5",
+    "nodemon": "^3.1.10",
+    "typescript": "^5.9.3"
+  }
+}

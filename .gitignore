@@ -1,0 +1,16 @@
+/node_modules
+/dist
+/.env
+/.env.local
+/.env.development
+/.env.test
+/.env.production
+
+/logs
+
+/datasets/users.csv
+/datasets/orders.csv
+/datasets/products.csv
+/datasets/*.sqlite
+
+.commandcode

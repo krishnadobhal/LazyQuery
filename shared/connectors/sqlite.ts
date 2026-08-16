@@ -1,4 +1,4 @@
-import Database from 'better-sqlite3';
+import { DatabaseSync } from 'node:sqlite';
 import type { Connector, ConnectionConfig, TableMetadata } from '../connectors.js';
 import type { ColumnType } from '../types.js';
 
@@ -11,11 +11,14 @@ function mapType(sqliteType: string): ColumnType {
   return 'string';
 }
 
+/**
+ * Built on Node's own `node:sqlite`
+ */
 export class SqliteConnector implements Connector {
   readonly id: string;
   readonly type: 'sqlite' = 'sqlite';
   readonly config: ConnectionConfig;
-  private db?: Database.Database;
+  private db?: DatabaseSync;
 
   constructor(config: ConnectionConfig) {
     this.id = config.id;
@@ -25,7 +28,7 @@ export class SqliteConnector implements Connector {
   async connect(): Promise<void> {
     const file = this.config.file ?? this.config.host;
     if (!file) throw new Error(`SQLite connector '${this.id}' requires a 'file' path.`);
-    this.db = new Database(file, { readonly: true });
+    this.db = new DatabaseSync(file, { readOnly: true });
   }
 
   async listTables(): Promise<string[]> {
@@ -51,21 +54,6 @@ export class SqliteConnector implements Connector {
     return row.n;
   }
 
-  /** Run arbitrary SQL directly — no chunking, SQLite does the work. */
-  async query(sql: string): Promise<{ columns: string[]; rows: Array<string | number | null>[] }> {
-    const stmt = this.db!.prepare(sql);
-    if (!stmt.reader) {
-      const info = stmt.run();
-      return { columns: ['result'], rows: [[`${info.changes} row(s) affected`]] };
-    }
-    const columns = stmt.columns().map((c) => c.name);
-    const rows = (stmt.all() as Array<Record<string, unknown>>).map((r) => columns.map((c) => {
-      const v = r[c];
-      return typeof v === 'number' ? v : v === null || v === undefined ? null : String(v);
-    }));
-    return { columns, rows };
-  }
-
   async readRange(
     table: string,
     startRow: number,
@@ -85,5 +73,22 @@ export class SqliteConnector implements Connector {
       }
       return out;
     });
+  }
+
+  /** Run arbitrary SQL directly — no chunking, SQLite does the work. */
+  async query(sql: string): Promise<{ columns: string[]; rows: Array<string | number | null>[] }> {
+    const stmt = this.db!.prepare(sql);
+    const cols = stmt.columns();
+    if (cols.length === 0) {
+      // No result columns — a mutating statement (INSERT/UPDATE/DDL/...).
+      const info = stmt.run();
+      return { columns: ['result'], rows: [[`${info.changes} row(s) affected`]] };
+    }
+    const columns = cols.map((c) => String(c.name));
+    const rows = (stmt.all() as Array<Record<string, unknown>>).map((r) => columns.map((c) => {
+      const v = r[c];
+      return typeof v === 'number' ? v : v === null || v === undefined ? null : String(v);
+    }));
+    return { columns, rows };
   }
 }
